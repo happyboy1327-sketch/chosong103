@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>초성 퀴즈</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Malgun Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1.25em;
+}
+
+#quiz-container {
+  background: #fff;
+  padding: 1.875em 1.25em;
+  border-radius: 0.75em;
+  box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.15);
+  text-align: center;
+  width: 100%;
+  max-width: 31.25em;
+}
+
+#question {
+  font-size: 2.25em;
+  font-weight: 700;
+  color: #8fc7ff;
+  margin-bottom: 0.94em;
+  letter-spacing: 0.125em;
+}
+
+#hint {
+  color: #555;
+  font-size: 1em;
+  margin-bottom: 1.25em;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+#result {
+  margin-top: 0.94em;
+  font-weight: bold;
+  font-size: 1em;
+  min-height: 1.5em;
+}
+
+input {
+  padding: 0.75em 0.94em;
+  font-size: 1em;
+  width: 100%;
+  max-width: 100%;
+  border: 0.125em solid #ccc;
+  border-radius: 0.375em;
+  margin-bottom: 0.94em;
+  transition: border-color 0.3s;
+  font-family: inherit;
+}
+
+input:focus {
+  outline: none;
+  border-color: #8fc7ff;
+}
+
+button {
+  padding: 0.75em 0.94em;
+  font-size: 1em;
+  margin: 0.5em 0.25em;
+  border: none;
+  border-radius: 0.375em;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  min-width: 5em;
+}
+
+#checkBtn {
+  background: #f20b58;
+  color: white;
+}
+
+#checkBtn:hover {
+  background: #d60945;
+}
+
+#checkBtn:active {
+  transform: scale(0.95);
+}
+
+#nextBtn {
+  background: #004d40;
+  color: white;
+}
+
+#nextBtn:hover {
+  background: #003d33;
+}
+
+#nextBtn:active {
+  transform: scale(0.95);
+}
+
+#searchBtn {
+  background: #2196F3;
+  color: white;
+  position: fixed;
+  top: 0.94em;
+  right: 0.94em;
+  padding: 0.625em 0.94em;
+  z-index: 100;
+  font-size: 0.875em;
+}
+
+#searchBtn:hover {
+  background: #1976D2;
+}
+
+#searchBtn:active {
+  transform: scale(0.95);
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 태블릿 이상 */
+@media (min-width: 768px) {
+  body {
+    padding: 2.5em 1.25em;
+  }
+  
+  #quiz-container {
+    padding: 2.5em 1.875em;
+  }
+  
+  button {
+    min-width: 7.5em;
+  }
+}
+
+/* 큰 화면 */
+@media (min-width: 1024px) {
+  #quiz-container {
+    max-width: 37.5em;
+  }
+}
+
+/* 다크 모드 대응 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+  }
+  
+  #quiz-container {
+    background: #1e1e1e;
+    color: #fff;
+  }
+  
+  #question {
+    color: #64b5f6;
+  }
+  
+  #hint {
+    color: #bbb;
+  }
+  
+  input {
+    background: #2a2a2a;
+    color: #fff;
+    border-color: #444;
+  }
+  
+  input:focus {
+    border-color: #64b5f6;
+  }
+}
+
+/* 작은 화면 최적화 */
+@media screen and (max-width: 460px) {
+  html {
+    font-size: 13px;
+  }
+  
+  body {
+    padding: 0.9em;
+  }
+  
+  #quiz-container {
+    padding: 1.2em 0.8em;
+    border-radius: 0.61em;
+    max-width: 120%;
+  }
+  
+  #searchBtn {
+    top: 0.625em;
+    right: 0.625em;
+    padding: 0.5em 1em;
+    font-size: 0.75em;
+  }
+  
+  #question {
+    font-size: 1.95em;
+  }
+  
+  #hint {
+    font-size: 1.05em;
+  }
+  
+  input {
+    font-size: 1.2em;
+    padding: 0.525em 0.7em;
+  }
+  
+  button {
+    min-width: 4.7em;
+    padding: 0.625em 1em;
+    font-size: 0.9em;
+  }
+  
+  .button-group {
+    gap: 0.375em;
+  }
+}
+</style>
+</head>
+<body>
+<button id="searchBtn">🔍 단어 검색</button>
+
+<div id="quiz-container">
+    <div id="question">문제 불러오는 중...</div>
+    <div id="hint"></div>
+    <input id="answerInput" placeholder="정답 입력"/>
+    <div>
+      <button id="checkBtn">정답 확인</button>
+      <button id="nextBtn">다음 문제</button>
+    </div>
+    <div id="result"></div>
+  </div>
+</div>
+
+<script>
+let quizData=[], currentIndex=-1;
+const CHO_LIST=[ 'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ' ];
+
+function getChosung(str){
+  let result="";
+  for(const c of str){
+    if(c===" "){ result+=" "; continue; }
+    const code=c.charCodeAt(0);
+    if(code>=0xAC00 && code<=0xD7A3){ result+=CHO_LIST[Math.floor((code-0xAC00)/588)]; }
+  }
+  return result;
+}
+
+function cleanWord(w){ return w.replace(/\d+$/,""); }
+
+function getnextQuiz(){
+  currentIndex++;
+  if(currentIndex>=quizData.length) currentIndex=0;
+  const q=quizData[currentIndex];
+  if(!q) return;
+  const clean=cleanWord(q.word);
+  window.currentQuiz={...q, word:clean};
+  document.getElementById("question").innerText="| "+getChosung(clean)+" |";
+  document.getElementById("hint").innerText="※뜻: "+q.hint;
+  document.getElementById("result").innerText="";
+  document.getElementById("answerInput").value="";
+  document.getElementById("answerInput").focus();
+}
+
+// 초기 문제 배치
+async function loadBatch(){
+  try{
+    const res=await fetch("/api/newbatch");
+    const data=await res.json();
+    quizData=data;
+    getnextQuiz();
+  }catch(e){ console.error(e); document.getElementById("question").innerText="로드 실패"; }
+}
+loadBatch();
+
+
+// 정답 확인
+document.getElementById("checkBtn").onclick=()=>{
+  const input=document.getElementById("answerInput").value.trim();
+  if(!window.currentQuiz) return;
+  if(input===window.currentQuiz.word){
+    document.getElementById("result").innerText="✅ 정답!";
+    document.getElementById("result").style.color="#00796b";
+  } else {
+    document.getElementById("result").innerText="❌ 오답. 정답: "+window.currentQuiz.word;
+    document.getElementById("result").style.color="#d32f2f";
+  }
+};
+
+// 다음 문제
+document.getElementById("nextBtn").onclick=getnextQuiz;
+
+document.getElementById("searchBtn").onclick=()=>{
+  window.location.href="/search.html";
+};
+</script>
+</body>
+</html>
