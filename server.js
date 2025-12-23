@@ -48,6 +48,9 @@ function getChosung(text){
 // =====================
 // 힌트 추출
 // =====================
+// =====================
+// 힌트 추출
+// =====================
 function extractHint(posInfo, wordInfo) {
   if (!posInfo) return null;
   
@@ -69,11 +72,14 @@ function extractHint(posInfo, wordInfo) {
                        .replace(/\s+/g, " ")
                        .trim();
             if (hint.length >= 5 && hint.length <= 200) {
-              return "속담: " + hint;
+              hints.push("속담: " + hint);
             }
           }
         }
       }
+    }
+    if (hints.length > 0) {
+      return hints.length === 1 ? hints[0] : hints.map((h, i) => `${i + 1}. ${h}`).join(" / ");
     }
   }
   
@@ -97,7 +103,7 @@ function extractHint(posInfo, wordInfo) {
             !/^\d+$/.test(hint) && 
             !hint.includes("<") && 
             !hint.includes(">")) {
-          // 중복 제거 (완전히 같은 것만)
+          // 중복 제거
           if (!hints.includes(hint)) {
             hints.push(hint);
           }
@@ -111,7 +117,6 @@ function extractHint(posInfo, wordInfo) {
   if (hints.length === 1) return hints[0];
   return hints.map((h, i) => `${i + 1}. ${h}`).join(" / ");
 }
-
 // =====================
 // 단어 필터링
 // =====================
