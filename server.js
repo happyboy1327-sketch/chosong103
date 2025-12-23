@@ -45,11 +45,15 @@ function getChosung(text){
 }
 
 // =====================
+// =====================
 // 힌트 추출
 // =====================
 function extractHint(posInfo, wordInfo) {
   if (!posInfo) return null;
-
+  
+  const hints = [];
+  
+  // 속담 처리
   if (wordInfo?.word_unit === "속담") {
     for (const pos of posInfo) {
       if (!pos.comm_pattern_info) continue;
@@ -72,7 +76,8 @@ function extractHint(posInfo, wordInfo) {
       }
     }
   }
-
+  
+  // 일반 단어 - 모든 뜻 수집
   for (const pos of posInfo) {
     if (!pos.comm_pattern_info) continue;
     for (const comm of pos.comm_pattern_info) {
@@ -80,18 +85,31 @@ function extractHint(posInfo, wordInfo) {
       for (const sense of comm.sense_info) {
         let hint = sense.definition_original;
         if (!hint) continue;
-        hint = hint.replace(/<[^>]*>/g,"")
-                   .replace(/\d{5,}/g,"")
-                   .replace(/'[^']*'/g,"")
-                   .replace(/[_\[\]「」『』()]/g," ")
-                   .replace(/\s+/g," ").trim();
-        if (hint.length>=1 && hint.length<=160 && !/^\d+$/.test(hint) && !hint.includes("<") && !hint.includes(">")) {
-          return hint;
+        
+        hint = hint.replace(/<[^>]*>/g, "")
+                   .replace(/\d{5,}/g, "")
+                   .replace(/'[^']*'/g, "")
+                   .replace(/[_\[\]「」『』()]/g, " ")
+                   .replace(/\s+/g, " ")
+                   .trim();
+        
+        if (hint.length >= 1 && hint.length <= 160 && 
+            !/^\d+$/.test(hint) && 
+            !hint.includes("<") && 
+            !hint.includes(">")) {
+          // 중복 제거 (완전히 같은 것만)
+          if (!hints.includes(hint)) {
+            hints.push(hint);
+          }
         }
       }
     }
   }
-  return null;
+  
+  // 결과 반환
+  if (hints.length === 0) return null;
+  if (hints.length === 1) return hints[0];
+  return hints.map((h, i) => `${i + 1}. ${h}`).join(" / ");
 }
 
 // =====================
@@ -188,7 +206,7 @@ app.get("/api/search", async (req, res) => {
     return res.json([]);
   }
   
-  const results = [];
+  const resultsMap = new Map(); // 중복 단어 처리용
   
   return new Promise((resolve) => {
     yauzl.open(ZIP_PATH, {lazyEntries: true, decodeStrings: false}, (err, zipfile) => {
@@ -220,22 +238,46 @@ app.get("/api/search", async (req, res) => {
                 for (const raw of items) {
                   const wordRaw = raw?.word_info?.word;
                   if (!wordRaw) continue;
+                  
                   const cleanWord = wordRaw.replace(/\(([^)]*)\)/g, (match, content) => {
-                    // 괄호 안에 '을', '를', '이', '가' 등 조사가 포함되어 있을 경우 
-                    // 괄호를 제거하고 내용만 남김 (예: (을) -> 을)
-                  if (content.length <= 2 && content.match(/^(을|를|이|가|와|과|은|는|도|만)$/)) {
-                      return content;
-                    }
-                    return ''; // 그 외 괄호는 모두 제거
-                  }).trim();
-                  // 🚨 수정 끝
+                    if (content.length <= 2 && content.match(/^(을|를|이|가|와|과|은|는|도|만)$/)) {
+                      return content;
+                    }
+                    return '';
+                  }).trim();
                   
                   if (wordRaw.toLowerCase().includes(word.toLowerCase())) {
                     const hint = extractHint(raw.word_info?.pos_info, raw.word_info);
-                    results.push({
-                      word: cleanWord,
-                      hint: hint || "정의 없음"
-                    });
+                    
+                    if (hint && hint !== "정의 없음") {
+                      // 같은 단어가 이미 있으면 힌트를 합침
+                      if (resultsMap.has(cleanWord)) {
+                        const existing = resultsMap.get(cleanWord);
+                        // 기존 힌트와 새 힌트를 합침 (중복 제거)
+                        const existingHints = existing.hint.split(" / ");
+                        const newHints = hint.split(" / ");
+                        
+                        const allHints = [...new Set([...existingHints, ...newHints])];
+                        existing.hint = allHints.map((h, i) => {
+                          // 이미 번호가 있으면 제거하고 다시 번호 매김
+                          const cleaned = h.replace(/^\d+\.\s*/, "");
+                          return allHints.length > 1 ? `${i + 1}. ${cleaned}` : cleaned;
+                        }).join(" / ");
+                      } else {
+                        resultsMap.set(cleanWord, {
+                          word: cleanWord,
+                          hint: hint
+                        });
+                      }
+                    } else {
+                      // 힌트가 없어도 단어는 추가
+                      if (!resultsMap.has(cleanWord)) {
+                        resultsMap.set(cleanWord, {
+                          word: cleanWord,
+                          hint: "정의 없음"
+                        });
+                      }
+                    }
                   }
                 }
               }
@@ -253,6 +295,7 @@ app.get("/api/search", async (req, res) => {
       
       zipfile.on("end", () => {
         zipfile.close();
+        const results = Array.from(resultsMap.values());
         console.log(`✅ [검색] 완료: ${results.length}개 단어 찾음`);
         res.json(results);
         resolve();
@@ -266,7 +309,6 @@ app.get("/api/search", async (req, res) => {
     });
   });
 });
-
 // =====================
 // 퀴즈 배치 API
 // =====================
