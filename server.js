@@ -48,7 +48,6 @@ function getChosung(text){
 // =====================
 // 힌트 추출
 // =====================
-// =====================
 // 힌트 추출
 // =====================
 function extractHint(posInfo, wordInfo) {
@@ -110,6 +109,12 @@ function extractHint(posInfo, wordInfo) {
         }
       }
     }
+  }
+  
+  // ✅ 디버깅용 로그 추가
+  if (wordInfo?.word) {
+    console.log(`📝 [${wordInfo.word}] 찾은 뜻 개수: ${hints.length}`);
+    console.log(`📝 [${wordInfo.word}] 뜻 목록:`, hints);
   }
   
   // 결과 반환
